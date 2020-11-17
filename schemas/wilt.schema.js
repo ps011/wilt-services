@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const wiltSchema = new Schema({
     compact: String,
     lengthy: String,
-    visuals:  Array[String],
+    visuals: [String],
     userId: String,
     date: { type: Date, default: Date.now }
 });

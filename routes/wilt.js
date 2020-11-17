@@ -19,7 +19,7 @@ router.post('/create', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
-        const result = await Wilt.find({ userId: req.params.id });
+        const result = await Wilt.findOne({ userId: req.params.id });
         res.status(200).send(result);
     } catch (e) {
         res.status(404).send(e.message);
