@@ -3,8 +3,10 @@ const Schema = mongoose.Schema;
 
 const wiltSchema = new Schema({
     compact: String,
+    category: String,
     lengthy: String,
     visuals: [String],
+    tags: [String],
     userId: String,
     date: { type: Date, default: Date.now }
 });

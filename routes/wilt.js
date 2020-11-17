@@ -9,6 +9,8 @@ router.post('/create', async (req, res) => {
             compact: req.body.compact,
             lengthy: req.body.lengthy,
             visuals: req.body.visuals,
+            category: req.body.category,
+            tags: req.body.tags,
             userId: req.body.userId,
         });
         res.status(200).send(result);
