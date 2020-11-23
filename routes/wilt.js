@@ -12,6 +12,8 @@ router.post('/create', async (req, res) => {
             category: req.body.category,
             tags: req.body.tags,
             userId: req.body.userId,
+            username: req.body.username,
+            private: req.body.private
         });
         res.status(200).send(result);
     } catch (e) {
@@ -39,7 +41,7 @@ router.get('/delete/:id', async (req, res) => {
 
 router.post('/update/:id', async (req, res) => {
     try {
-        const result = await about.update({ _id: req.params.id }, {
+        const result = await Wilt.update({ _id: req.params.id }, {
             compact: req.body.compact,
             lengthy: req.body.lengthy,
             visuals: req.body.visuals

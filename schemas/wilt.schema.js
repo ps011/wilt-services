@@ -8,6 +8,8 @@ const wiltSchema = new Schema({
     visuals: [String],
     tags: [String],
     userId: String,
+    username: String,
+    private: Boolean,
     date: { type: Date, default: Date.now }
 });
 

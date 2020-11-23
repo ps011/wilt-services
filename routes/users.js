@@ -91,6 +91,21 @@ router.put('/update/:id', async (req, res) => {
   }
 });
 
+router.post('/save', async(req, res) => {
+  try {
+      const result = await user.findById(req.body.userId);
+      if (result.saved_wilts.indexOf(req.body.wiltId) > -1) {
+        result.saved_wilts.splice(result.saved_wilts.indexOf(req.body.wiltId), 1);
+      } else {
+        result.saved_wilts.push(req.body.wiltId);
+      }
+      await user.update({ _id: req.body.userId }, result, {omitUndefined: true, multi: false})
+      res.status(200).send(result.saved_wilts);
+  } catch (e) {
+      res.status(404).send(e.message);
+  }
+});
+
 const generateToken = (payload) => {
   return jwt.sign({userIdentifier: payload}, process.env.JWT_KEY, {expiresIn: '60m'});
 };

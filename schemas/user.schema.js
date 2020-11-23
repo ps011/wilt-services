@@ -33,6 +33,10 @@ const userSchema = new Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
+    },
+    saved_wilts: {
+        type: [String],
+        default: []
     }
 }, {timestamps: true});
 
