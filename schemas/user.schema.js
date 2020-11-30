@@ -29,6 +29,16 @@ const userSchema = new Schema({
         type: Boolean,
         default: false
     },
+    followers: {
+        type: [String],
+        default: []
+    },
+    following: {
+        type: [String],
+        default: []
+    },
+    about: String,
+    headline: String,
     type: {
         type: String,
         enum: ['user', 'admin'],
