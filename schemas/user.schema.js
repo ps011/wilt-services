@@ -19,7 +19,10 @@ const userSchema = new Schema({
         type: String,
     },
     mobile: String,
-    profile_image: String,
+    profile_image: {
+        type: String,
+        default: ''
+    },
     plan: {
         type: String,
         enum: ['free', 'premium'],
