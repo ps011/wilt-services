@@ -82,7 +82,7 @@ router.get('/delete/:id', passport.authenticate('jwt'), async (req, res) => {
   }
 });
 
-router.put('/update/:id', async (req, res) => {
+router.post('/update/:id', passport.authenticate('jwt'), async (req, res) => {
   try {
     const result = await user.findByIdAndUpdate(req.params.id, req.body, {new: true})
     res.status(200).send(result);
