@@ -23,7 +23,7 @@ router.post('/create', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
-        const result = await Wilt.findOne({ userId: req.params.id });
+        const result = await Wilt.findById(req.params.id);
         res.status(200).send(result);
     } catch (e) {
         res.status(404).send(e.message);
@@ -54,7 +54,21 @@ router.post('/update/:id', async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const result = await Wilt.find({});
+        const tags = req.query.tags && req.query.tags.split(',');
+        const categories = req.query.category && req.query.category.split(',');
+        let result;
+        const query = [];
+        if (tags) {
+            query.push(tags.map(tags => {return {tags}}));
+        }
+        if (categories) {
+            query.push(categories.map(category => { return {category}}));
+        }
+        if (query.length > 0) {
+            result = await Wilt.find({ $or: query});
+        } else {
+            result = await Wilt.find({});
+        }
         res.status(200).send(result);
     } catch (e) {
         res.status(404).send(e.message);
