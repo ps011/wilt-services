@@ -87,7 +87,7 @@ router.get("/:id", passport.authenticate("jwt"), async (req, res) => {
   } else {
     try {
       const result = await user.findById(req.params.id);
-      delete result.password;
+      result.password = '';
       res.status(200).send(result);
     } catch (e) {
       res.status(404).send(e.message);
