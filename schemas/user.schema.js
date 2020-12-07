@@ -50,6 +50,10 @@ const userSchema = new Schema({
     saved_wilts: {
         type: [String],
         default: []
+    },
+    blocked: {
+        type: [String],
+        default: []
     }
 }, {timestamps: true});
 
