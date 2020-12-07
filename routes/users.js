@@ -77,7 +77,7 @@ router.get("/validate", passport.authenticate("jwt"), (req, res) => {
 });
 
 router.get("/:id", passport.authenticate("jwt"), async (req, res) => {
-  if (req.user._id == req.params.id) {
+  if (req.user._id === req.params.id) {
     try {
       const result = await user.findById(req.params.id);
       res.status(200).send(result);
@@ -85,7 +85,13 @@ router.get("/:id", passport.authenticate("jwt"), async (req, res) => {
       res.status(404).send(e.message);
     }
   } else {
-    res.status(401).send("Unauthorized");
+    try {
+      const result = await user.findById(req.params.id);
+      delete result.password;
+      res.status(200).send(result);
+    } catch (e) {
+      res.status(404).send(e.message);
+    }
   }
 });
 
