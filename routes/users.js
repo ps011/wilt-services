@@ -7,11 +7,7 @@ const jwt = require("jsonwebtoken");
 router.post("/login", passport.authenticate("local"), async (req, res) => {
   res.json({
     token: generateToken(req.body.username),
-    user: {
-      username: req.user.username,
-      email: req.user.email,
-      id: req.user._id,
-    },
+    user: req.user
   });
 });
 
@@ -139,6 +135,66 @@ router.get("/unblock/:id", passport.authenticate("jwt"), async (req, res) => {
       );
     }
     res.status(200).send(userObj);
+  } catch (e) {
+    res.status(404).send(e.message);
+  }
+});
+
+router.get("/follow/:id", passport.authenticate("jwt"), async (req, res) => {
+  try {
+// req.user.id: The User who is following
+// req.params.id: The user who is being followed
+    let follower = await user.findById(req.user.id);
+    let followee = await user.findById(req.params.id);
+    const index = follower.following.indexOf(req.params.id)
+    if (index < 0) {
+    follower.following.push(req.params.id);
+    followee.followers.push(req.user.id);
+    follower = await user.findByIdAndUpdate(
+      req.user.id,
+      {
+        following: follower.following,
+      },
+      { new: true, useFindAndModify: true }
+    );
+    followee = await user.findByIdAndUpdate(
+      req.params.id,
+      {
+        followers: followee.followers,
+      },
+      { new: true, useFindAndModify: true }
+    );
+    }
+    res.status(200).send(follower);
+  } catch (e) {
+    res.status(404).send(e.message);
+  }
+});
+
+router.get("/unfollow/:id", passport.authenticate("jwt"), async (req, res) => {
+  try {
+    let unfollower = await user.findById(req.user.id);
+    let unfollowee = await user.findById(req.params.id);
+    const index = unfollower.following.indexOf(req.params.id);
+    if (index > -1) {
+       unfollower.following.splice(index, 1);
+       unfollowee.followers.splice(unfollowee.followers.indexOf(req.user.id), 1);
+       unfollower = await user.findByIdAndUpdate(
+        req.user.id,
+        {
+          following: unfollower.following,
+        },
+        { new: true }
+      );
+      unfollowee = await user.findByIdAndUpdate(
+        req.params.id,
+        {
+          followers: unfollower.followers,
+        },
+        { new: true }
+      );
+    }
+    res.status(200).send(unfollower);
   } catch (e) {
     res.status(404).send(e.message);
   }
