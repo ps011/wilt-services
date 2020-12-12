@@ -32,6 +32,7 @@ const userSchema = new Schema({
         type: Boolean,
         default: false
     },
+    hash: String,
     followers: {
         type: [String],
         default: []

@@ -3,7 +3,7 @@ const user = require("../schemas/user.schema");
 const router = express.Router();
 const passport = require("../utils/auth-strategies");
 const jwt = require("jsonwebtoken");
-
+const transporter = require('../utils/email-configuration');
 router.post("/login", passport.authenticate("local"), async (req, res) => {
   res.json({
     token: generateToken(req.body.username),
@@ -55,18 +55,38 @@ router.get("/google/callback", passport.authenticate("google"), (req, res) => {
 
 router.post("/create", async (req, res) => {
   try {
+    const hash = Math.random().toString(36).slice(2);
     const result = await user.create({
       name: req.body.name,
       email: req.body.email,
       username: req.body.username,
       password: req.body.password,
       mobile: req.body.mobile,
+      hash
     });
+      // send mail with defined transport object
+  let info = await transporter.sendMail({
+    from: '"What I Learned Today? 🧠" <email-verification@wilt.com>',
+    to: req.body.email,
+    subject: "Verify your email address",
+    html: `<a href="http://localhost:3000/users/activate/${hash}">Activate Account</a>`, 
+  });
     res.status(200).send(result);
   } catch (e) {
     res.status(404).send(e.message);
   }
 });
+
+router.get("/activate/:hash", async (req, res) => {
+  try {
+  let inactive = await user.findOne({hash: req.params.hash});
+  inactive.active = true;
+  inactive = await user.updateOne({_id: inactive._id}, inactive);
+  res.status(200).send(inactive);
+  } catch (e) {
+    res.status(404).send(e.message);
+  }
+})
 
 router.get("/validate", passport.authenticate("jwt"), (req, res) => {
   res.send(req.user);
