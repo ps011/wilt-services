@@ -3,11 +3,12 @@ const user = require("../schemas/user.schema");
 const router = express.Router();
 const passport = require("../utils/auth-strategies");
 const jwt = require("jsonwebtoken");
-const transporter = require('../utils/email-configuration');
+const transporter = require("../utils/email-configuration");
+
 router.post("/login", passport.authenticate("local"), async (req, res) => {
   res.json({
     token: generateToken(req.body.username),
-    user: req.user
+    user: req.user,
   });
 });
 
@@ -62,15 +63,15 @@ router.post("/create", async (req, res) => {
       username: req.body.username,
       password: req.body.password,
       mobile: req.body.mobile,
-      hash
+      hash,
     });
-      // send mail with defined transport object
-  let info = await transporter.sendMail({
-    from: '"What I Learned Today? 🧠" <email-verification@wilt.com>',
-    to: req.body.email,
-    subject: "Verify your email address",
-    html: `<a href="http://localhost:3000/users/activate/${hash}">Activate Account</a>`, 
-  });
+    // send mail with defined transport object
+    let info = await transporter.sendMail({
+      from: '"What I Learned Today? 🧠" <email-verification@wilt.com>',
+      to: req.body.email,
+      subject: "Verify your email address",
+      html: `<a href="http://localhost:3000/users/activate/${hash}">Activate Account</a>`,
+    });
     res.status(200).send(result);
   } catch (e) {
     res.status(404).send(e.message);
@@ -79,31 +80,51 @@ router.post("/create", async (req, res) => {
 
 router.get("/activate/:hash", async (req, res) => {
   try {
-  let inactive = await user.findOne({hash: req.params.hash});
-  inactive.active = true;
-  inactive = await user.updateOne({_id: inactive._id}, inactive);
-  res.status(200).send(inactive);
+    let inactive = await user.findOne({ hash: req.params.hash });
+    inactive.active = true;
+    inactive = await user.updateOne({ _id: inactive._id }, inactive);
+    res.status(200).send(inactive);
   } catch (e) {
     res.status(404).send(e.message);
   }
-})
+});
 
 router.get("/validate", passport.authenticate("jwt"), (req, res) => {
   res.send(req.user);
 });
 
 router.get("/:id", passport.authenticate("jwt"), async (req, res) => {
-  if (req.user._id === req.params.id) {
+  if (req.user.id === req.params.id) {
     try {
-      const result = await user.findById(req.params.id);
+      const result = await user.aggregate([
+        { $match: { username: req.user.username } },
+        {
+          $lookup: {
+            from: "wilts",
+            localField: "username",
+            foreignField: "username",
+            as: "wilts",
+          },
+        },
+      ]);
       res.status(200).send(result);
     } catch (e) {
       res.status(404).send(e.message);
     }
   } else {
     try {
-      const result = await user.findById(req.params.id);
-      result.password = '';
+      const result = await user.aggregate([
+        { $match: { username: req.user.username } },
+        {
+          $lookup: {
+            from: "wilts",
+            localField: "username",
+            foreignField: "username",
+            as: "wilts",
+          },
+        },
+      ]);
+      result.password = "";
       res.status(200).send(result);
     } catch (e) {
       res.status(404).send(e.message);
@@ -123,16 +144,16 @@ router.get("/delete/:id", passport.authenticate("jwt"), async (req, res) => {
 router.get("/block/:id", passport.authenticate("jwt"), async (req, res) => {
   try {
     let userObj = await user.findById(req.user.id);
-    const index = userObj.blocked.indexOf(req.params.id)
+    const index = userObj.blocked.indexOf(req.params.id);
     if (index < 0) {
-    userObj.blocked.push(req.params.id);
-    userObj = await user.findByIdAndUpdate(
-      req.user.id,
-      {
-        blocked: userObj.blocked,
-      },
-      { new: true, useFindAndModify: true }
-    );
+      userObj.blocked.push(req.params.id);
+      userObj = await user.findByIdAndUpdate(
+        req.user.id,
+        {
+          blocked: userObj.blocked,
+        },
+        { new: true, useFindAndModify: true }
+      );
     }
     res.status(200).send(userObj);
   } catch (e) {
@@ -145,8 +166,8 @@ router.get("/unblock/:id", passport.authenticate("jwt"), async (req, res) => {
     let userObj = await user.findById(req.user.id);
     const index = userObj.blocked.indexOf(req.params.id);
     if (index > -1) {
-       userObj.blocked.splice(index, 1);
-       userObj = await user.findByIdAndUpdate(
+      userObj.blocked.splice(index, 1);
+      userObj = await user.findByIdAndUpdate(
         req.user.id,
         {
           blocked: userObj.blocked,
@@ -162,28 +183,28 @@ router.get("/unblock/:id", passport.authenticate("jwt"), async (req, res) => {
 
 router.get("/follow/:id", passport.authenticate("jwt"), async (req, res) => {
   try {
-// req.user.id: The User who is following
-// req.params.id: The user who is being followed
+    // req.user.id: The User who is following
+    // req.params.id: The user who is being followed
     let follower = await user.findById(req.user.id);
     let followee = await user.findById(req.params.id);
-    const index = follower.following.indexOf(req.params.id)
+    const index = follower.following.indexOf(req.params.id);
     if (index < 0) {
-    follower.following.push(req.params.id);
-    followee.followers.push(req.user.id);
-    follower = await user.findByIdAndUpdate(
-      req.user.id,
-      {
-        following: follower.following,
-      },
-      { new: true, useFindAndModify: true }
-    );
-    followee = await user.findByIdAndUpdate(
-      req.params.id,
-      {
-        followers: followee.followers,
-      },
-      { new: true, useFindAndModify: true }
-    );
+      follower.following.push(req.params.id);
+      followee.followers.push(req.user.id);
+      follower = await user.findByIdAndUpdate(
+        req.user.id,
+        {
+          following: follower.following,
+        },
+        { new: true, useFindAndModify: true }
+      );
+      followee = await user.findByIdAndUpdate(
+        req.params.id,
+        {
+          followers: followee.followers,
+        },
+        { new: true, useFindAndModify: true }
+      );
     }
     res.status(200).send(follower);
   } catch (e) {
@@ -197,9 +218,9 @@ router.get("/unfollow/:id", passport.authenticate("jwt"), async (req, res) => {
     let unfollowee = await user.findById(req.params.id);
     const index = unfollower.following.indexOf(req.params.id);
     if (index > -1) {
-       unfollower.following.splice(index, 1);
-       unfollowee.followers.splice(unfollowee.followers.indexOf(req.user.id), 1);
-       unfollower = await user.findByIdAndUpdate(
+      unfollower.following.splice(index, 1);
+      unfollowee.followers.splice(unfollowee.followers.indexOf(req.user.id), 1);
+      unfollower = await user.findByIdAndUpdate(
         req.user.id,
         {
           following: unfollower.following,
