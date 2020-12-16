@@ -10,6 +10,7 @@ const wiltSchema = new Schema({
     userId: String,
     username: String,
     private: Boolean,
+    slug: String,
     date: { type: Date, default: Date.now }
 });
 

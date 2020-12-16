@@ -13,7 +13,8 @@ router.post('/create', async (req, res) => {
             tags: req.body.tags,
             userId: req.body.userId,
             username: req.body.username,
-            private: req.body.private
+            private: req.body.private,
+            slug: req.body.compact.replace(/\s+/g, '-').toLowerCase()
         });
         res.status(200).send(result);
     } catch (e) {
