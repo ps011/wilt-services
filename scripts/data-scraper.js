@@ -2,7 +2,7 @@ const cheerio = require("cheerio");
 const axios = require("axios");
 const Wilt = require("../schemas/wilt.schema");
 const mongoUtil = require("../utils/database");
-var url = require('url');
+var url = require("url");
 
 async function extractQuestionLinks(questionsListPageLink) {
   console.log("Reading Link: ", questionsListPageLink);
@@ -11,8 +11,8 @@ async function extractQuestionLinks(questionsListPageLink) {
   try {
     dom = await axios.get(questionsListPageLink);
   } catch (error) {
-      console.log('Error Occured', error);
-      process.exit(1)
+    console.log("Error Occured", error);
+    process.exit(1);
   }
   const $ = cheerio.load(dom.data);
   $(".question-hyperlink").each(function (index, element) {
@@ -25,34 +25,42 @@ async function extractQuestionLinks(questionsListPageLink) {
 }
 
 async function scrapeQuestion(questionAnswerPageLink, category, baseUrl) {
-  console.log("Got a list of ", questionAnswerPageLink.length, "questions from ", baseUrl);
+  console.log(
+    "Got a list of ",
+    questionAnswerPageLink.length,
+    "questions from ",
+    baseUrl
+  );
   const result = [];
   for ([index, link] of questionAnswerPageLink.entries()) {
     // if (index < 2) {
-      console.log("Extracting information from question: ", index + 1);
-      let dom;
-      try {
-        console.log("Extracting information from question: ", baseUrl + link);
-        dom = await axios.get(baseUrl + link);
-      } catch (error) {
-        console.log('Error Occured', error);
-        process.exit(1)
-      }
-      const $ = cheerio.load(dom.data);
-      const data = {
-        category,
-        tags: [],
-        userId: "5fd511f880ee1c0a22d0e571",
-        username: "wilt",
-      };
-      data.compact = $("#question-header").text().trim();
-      data.lengthy = $(
-        "div[itemprop=acceptedAnswer] .answercell .js-post-body"
-      ).html();
-      $(".post-taglist .grid a").each((index, element) => {
-        data.tags.push($(element).text());
-      });
+    console.log("Extracting information from question: ", index + 1);
+    let dom;
+    try {
+      console.log("Extracting information from question: ", baseUrl + link);
+      dom = await axios.get(baseUrl + link);
+    } catch (error) {
+      console.log("Error Occured", error);
+      process.exit(1);
+    }
+    const $ = cheerio.load(dom.data);
+    const data = {
+      category,
+      tags: [],
+      userId: "5fd511f880ee1c0a22d0e571",
+      username: "wilt"
+    };
+    data.compact = $("#question-header > h1").text().trim();
+    data.lengthy = $(
+      "div[itemprop=acceptedAnswer] .answercell .js-post-body"
+    ).html();
+    $(".post-taglist .grid a").each((index, element) => {
+      data.tags.push($(element).text());
+    });
+    data.slug = convertToSlug(data.compact);
+    if (data.lengthy !== "") {
       result.push(data);
+    }
     // }
   }
   return result;
@@ -66,20 +74,35 @@ async function insertIntoDB(data) {
     console.log("Success!! Data pushed into DB", result.length, "records");
     return result;
   } catch (e) {
-    console.log("Failure!! Failed to push data into DB");
+    console.log("Failure!! Failed to push data into DB", e);
   }
+}
+
+function convertToSlug(str) {
+  str = str.replace(/^\s+|\s+$/g, ""); // trim
+  str = str.toLowerCase();
+
+  var from = "åàáãäâèéëêìíïîòóöôùúüûñç·/_,:;";
+  var to = "aaaaaaeeeeiiiioooouuuunc------";
+
+  for (var i = 0, l = from.length; i < l; i++) {
+    str = str.replace(new RegExp(from.charAt(i), "g"), to.charAt(i));
+  }
+
+  str = str
+    .replace(/[^a-z0-9 -]/g, "") 
+    .replace(/\s+/g, "-") 
+    .replace(/-+/g, "-");
+
+  return str;
 }
 
 async function init(ar) {
   for (let index = 0; index < ar[3]; index++) {
     const data = await scrapeQuestion(
-      await extractQuestionLinks(
-        `${ar[4]}?page=${
-          index + 1
-        }&pagesize=30`
-      ),
+      await extractQuestionLinks(`${ar[4]}?page=${index + 1}&pagesize=30`),
       ar[2],
-      url.parse(ar[4]).protocol + '//' + url.parse(ar[4]).host
+      url.parse(ar[4]).protocol + "//" + url.parse(ar[4]).host
     );
     const result = await insertIntoDB(data);
     console.log("Pushed", result.length, "records in DB");
