@@ -68,7 +68,7 @@ router.get('/', async (req, res) => {
         if (query.length > 0) {
             result = await Wilt.find({ $or: query});
         } else {
-            result = await Wilt.find({});
+            result = await Wilt.paginate({}, {page: req.query.page, limit: req.query.limit});
         }
         res.status(200).send(result);
     } catch (e) {
